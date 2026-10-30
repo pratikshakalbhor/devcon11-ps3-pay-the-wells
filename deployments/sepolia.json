@@ -1,0 +1,8 @@
+{
+  "chainId": 11155111,
+  "contract": "0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22",
+  "juror": "0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0",
+  "operator": "0x22b94a9953dB57760eF54f010bA304a79bFAbeD2",
+  "status": "deployed",
+  "totalPotWei": 10000000000000000
+}

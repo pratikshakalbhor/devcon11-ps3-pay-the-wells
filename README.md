@@ -13,7 +13,7 @@ leaf. Graph traversal is cycle-safe.
 | Sample Merkle root | `0xe0a4e24507e6da90b6f5c165c46af2ae4a1a12c3cb4ad4804debfbb86bd6c477` |
 | Merkle leaves | `7` |
 | Test juror (public address) | `0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0` |
-| Sepolia contract | **PENDING — not deployed (no deploy credentials supplied).** |
+| Sepolia contract | [`0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22`](https://sepolia.etherscan.io/address/0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22) |
 | Local verification | `forge test` 14/14 pass, `npm test` 4/4 data tests pass, `npm run build` clean |
 
 ---
@@ -207,7 +207,7 @@ npm run sign-judgment -- --a qr-tickets --b hindi-i18n --prefer A
 
 ```powershell
 Copy-Item ui/.env.example ui/.env.local
-# set VITE_CONTRACT_ADDRESS to the deployed Sepolia contract
+# set VITE_CONTRACT_ADDRESS=0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22 (Sepolia)
 npm run ui:dev
 npm run build
 ```
@@ -218,15 +218,29 @@ injected wallets and enforce Sepolia (`11155111`). Claim success is shown only w
 
 ---
 
-## Sepolia deployment — PENDING
+## Sepolia deployment
 
-**Status: NOT DEPLOYED. No address is fabricated.**
+**Status: DEPLOYED. Bytecode verified onchain, Merkle root proposed.**
 
-`D:\devcon11-ps3\.env` contains only `TEST_JUROR_PRIVATE_KEY`. `PRIVATE_KEY`,
-`SEPOLIA_RPC_URL`, and `JUROR_ADDRESS` are absent, and no funded Sepolia key was supplied.
-Per the task instruction, deployment stopped here.
+| Item | Value |
+| --- | --- |
+| Contract | [`0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22`](https://sepolia.etherscan.io/address/0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22) |
+| Etherscan | <https://sepolia.etherscan.io/address/0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22> |
+| Deploy tx | [`0x1d55a2cd8b4ad599fb8ec0760739671dde86a9bfbc92504171e944c061114542`](https://sepolia.etherscan.io/tx/0x1d55a2cd8b4ad599fb8ec0760739671dde86a9bfbc92504171e944c061114542) |
+| `proposeResult` tx | [`0x4076712e3115f78836dec89c86c455731c5717279de76539b94e78fe3aa602c4`](https://sepolia.etherscan.io/tx/0x4076712e3115f78836dec89c86c455731c5717279de76539b94e78fe3aa602c4) |
+| Chain ID | `11155111` |
+| Operator | `0x22b94a9953dB57760eF54f010bA304a79bFAbeD2` |
+| Juror | `0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0` |
+| Pot | `0.01 ETH` (`10000000000000000` wei, held by the contract) |
+| Merkle root | `0xe0a4e24507e6da90b6f5c165c46af2ae4a1a12c3cb4ad4804debfbb86bd6c477` (equals `data/merkle.json`) |
+| Runtime code | 3063 bytes, starts `0x608060405234801561` |
+| Finalized | `false` — the 48-hour dispute window is open |
 
-When credentials are available:
+The deploy script's output is recorded in `deployments/sepolia.json`
+(`chainId`, `contract`, `operator`, `juror`, `totalPotWei`, `status`) and the full broadcast in
+`broadcast/Deploy.s.sol/11155111/run-latest.json`.
+
+### Reproduce / verify
 
 ```powershell
 # 1. Load .env into the PowerShell process.
@@ -234,28 +248,35 @@ Get-Content .env | ForEach-Object {
   if ($_ -match '^([^#=]+)=(.*)$') { Set-Item -Path "Env:$($matches[1])" -Value $matches[2] }
 }
 
-# 2. Build the sample artifacts.
-npm run compute -- --pot 10
-npm run merkle -- 10
-
-# 3. Deploy with 0.01 ETH and jurors [JUROR_ADDRESS, deployer].
-forge script script/Deploy.s.sol:Deploy --rpc-url $env:SEPOLIA_RPC_URL --broadcast
-
-# 4. Prove bytecode exists.
+# 2. Prove bytecode exists.
 $contract = (Get-Content deployments/sepolia.json | ConvertFrom-Json).contract
-cast code $contract --rpc-url $env:SEPOLIA_RPC_URL
+cast code $contract --rpc-url $env:SEPOLIA_RPC_URL        # starts 0x6080
 
-# 5. Smoke: propose the committed Merkle root.
-$root = (Get-Content data/merkle.json | ConvertFrom-Json).root
-cast send $contract "proposeResult(bytes32)" $root `
-  --rpc-url $env:SEPOLIA_RPC_URL --private-key $env:PRIVATE_KEY
-
-# 6. Read back.
+# 3. Read the committed root.
 cast call $contract "merkleRoot()(bytes32)" --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
-`script/Deploy.s.sol` writes `deployments/sepolia.json` with chain id, contract, operator, juror,
-and pot. The file contains public chain data only.
+### Redeploying
+
+```powershell
+npm run compute -- --pot 10
+npm run merkle -- 10
+
+# Sepolia charges roughly 6x the local revm gas estimate for contract creation, so the default
+# 130% multiplier runs out of gas. 900% gives the creation enough headroom.
+forge script script/Deploy.s.sol:Deploy --rpc-url $env:SEPOLIA_RPC_URL `
+  --broadcast --gas-estimate-multiplier 900
+
+$root = (Get-Content data/merkle.json | ConvertFrom-Json).root
+$contract = (Get-Content deployments/sepolia.json | ConvertFrom-Json).contract
+cast send $contract "proposeResult(bytes32)" $root `
+  --rpc-url $env:SEPOLIA_RPC_URL --private-key $env:PRIVATE_KEY
+```
+
+`script/Deploy.s.sol` writes `deployments/sepolia.json` after broadcasting. Note that it writes the
+file even when the broadcast fails, so always confirm with `cast code` before trusting the address.
+`foundry.toml` grants `fs_permissions = [{ access = "read-write", path = "./" }]` so `vm.writeJson`
+can create the file.
 
 ---
 
@@ -296,18 +317,20 @@ local `.env` used to generate test judgments. Public test addresses and signatur
 | `node scripts/source-scan.mjs` | **Done — exit 0** | `source-scan: clean` |
 | `node scripts/verify-merkle.ts` | **Done** | `All 7 proofs valid.` |
 | Credential grep | **Done — zero secrets** | `.env` untracked; `.env.example` placeholders only |
-| Sepolia deployment | **Pending — no deploy credentials** | `.env` lacks `PRIVATE_KEY`, `SEPOLIA_RPC_URL`, `JUROR_ADDRESS` |
-| `cast code` proof | **Not run — depends on deployment** | command documented above |
-| Push | **Not run (per instructions)** | push commands below |
+| Sepolia deployment | **Live — `0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22`** | deploy tx `0x1d55a2cd…1542` in `broadcast/Deploy.s.sol/11155111/run-latest.json` |
+| `cast code` proof | **Done — 3063 bytes, starts `0x608060405234801561`** | `cast code 0xc02f…ec22 --rpc-url $env:SEPOLIA_RPC_URL` |
+| `proposeResult` smoke test | **Done — root matches `data/merkle.json`** | tx `0x4076712e…02c4`; `merkleRoot()` readback equal |
+| Push | **Not run (per instructions)** | push command below |
 
 ---
 
 ## Push commands
 
-The repository is already on branch `main` with five commits. Do not push from this environment.
+The repository is on branch `main` with all deployment commits applied locally. Do not push from
+this environment.
 
 ```powershell
-git remote add origin <your-repo-url>
+git remote add origin https://github.com/pratikshakalbhor/devcon11-ps3-pay-the-wells.git
 git push -u origin main
 ```
 
