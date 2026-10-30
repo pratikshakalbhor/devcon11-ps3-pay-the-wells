@@ -1,75 +1,75 @@
 {
-  "root": "0xe0a4e24507e6da90b6f5c165c46af2ae4a1a12c3cb4ad4804debfbb86bd6c477",
+  "root": "0xb13209fed9a8fdd42612dc6cd4fdddc8fda9c677152938a73d18c25af71b916e",
   "leafCount": 7,
-  "totalPot": "10000000000000000000",
+  "totalPot": "10000000000000000",
   "leaves": [
     {
       "nodeId": "event-app",
       "recipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      "amount": "5000000000000000000",
+      "amount": "5000000000000000",
       "proof": [
-        "0x1dd728c90d8ae0476fd65e89bf0079c6b2b92bc53043e857bf5d8657512214e6",
-        "0xef134a1d6f4694893bcfac8cec5aba7d5754b247ecf12b8e8e4c021a619c1a57",
-        "0x85539cfd3eb99e48a328c1bc80d530e0e4c311ebf914da5ffa7329ddf2bea469"
+        "0x6c44631340e8975fa27c1455238769f4c8eb99ff3e25bd74e457640d5be4c6dc",
+        "0x188842cd552cfaa532bb159fe731691cd6078b47b646b716210406c0a49d899f",
+        "0xf1cbec941ab8f448dc64a24c2c2806c798cffa9442095d22b12ed1223d45c2d0"
       ]
     },
     {
       "nodeId": "qr-tickets",
       "recipient": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-      "amount": "1250000000000000000",
+      "amount": "1250000000000000",
       "proof": [
-        "0x0f359f814616a55494c0211944a6d432575c3dad9f62d30e2d5f0f0e5f397ade",
-        "0x85539cfd3eb99e48a328c1bc80d530e0e4c311ebf914da5ffa7329ddf2bea469"
+        "0x1212b8c8bf22276eba0950e7c4436b634e1255e07a6af1485aebe81ea06f502c",
+        "0xc7b0649481b5157296df77e7c3cff1db1bf994d28632228992508b1492697bb5",
+        "0x57c8f6d5b1e10a731e5e31d5eb6d44b51dfe08ead2da453ed51d2da928b30b17"
       ]
     },
     {
       "nodeId": "hindi-i18n",
       "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "amount": "833333333333333333",
+      "amount": "833333333333333",
       "proof": [
-        "0xe433687335badd21d5fb138503ee44b4ed7205d30c5c09212ec6d9f4a4cd80a9",
-        "0xb3893edeeac726c1cc2e7c588904173d30c49923ad6132a0c30b8962441c5512",
-        "0x604ec6a10e91f10b0beb19734aa04b40d6ef85e60b8f76c923b5217e0a51b2a2"
+        "0x320c1a3425da217ae3103805549e4beee3c2900848e2d9aadbb6af9e89a07b21",
+        "0x188842cd552cfaa532bb159fe731691cd6078b47b646b716210406c0a49d899f",
+        "0xf1cbec941ab8f448dc64a24c2c2806c798cffa9442095d22b12ed1223d45c2d0"
       ]
     },
     {
       "nodeId": "wallet-wrapper",
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "amount": "416666666666666668",
+      "amount": "416666666666667",
       "proof": [
-        "0xb662fc08623ee209da615b64dbaae79de3de81bbfe4165e0036bb85da5e2288c",
-        "0xb3893edeeac726c1cc2e7c588904173d30c49923ad6132a0c30b8962441c5512",
-        "0x604ec6a10e91f10b0beb19734aa04b40d6ef85e60b8f76c923b5217e0a51b2a2"
+        "0x91dcc513c250f027273e59806e1b972c981594c8e8baccbd13c2d9de94125f8c",
+        "0x57c8f6d5b1e10a731e5e31d5eb6d44b51dfe08ead2da453ed51d2da928b30b17"
       ]
     },
     {
       "nodeId": "qr-core",
       "recipient": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
-      "amount": "937500000000000000",
+      "amount": "937500000000000",
       "proof": [
-        "0x08d32c0b719aa7d191069df3aa4963442b48ab22b642e50b485c5be6e0450df5",
-        "0xef134a1d6f4694893bcfac8cec5aba7d5754b247ecf12b8e8e4c021a619c1a57",
-        "0x85539cfd3eb99e48a328c1bc80d530e0e4c311ebf914da5ffa7329ddf2bea469"
+        "0x77124d9ad1911d720d8b5efbb5100edb050a693b14a31ad334a7075b199d3df2",
+        "0x0c9b8bc0310e8ebd737a3ac343f8399f3837e8969938b112620cdf3e465db88b",
+        "0xf1cbec941ab8f448dc64a24c2c2806c798cffa9442095d22b12ed1223d45c2d0"
       ]
     },
     {
       "nodeId": "i18n-base",
       "recipient": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
-      "amount": "1145833333333333332",
+      "amount": "1145833333333333",
       "proof": [
-        "0x411fd70d2e12fd51d41cd63025b5e54accf60e59da75661e930fd7a104e290d1",
-        "0x013858de3d1196ab2ef8f7157a11811063771bb611f2cd5b16053d3be5257d28",
-        "0x604ec6a10e91f10b0beb19734aa04b40d6ef85e60b8f76c923b5217e0a51b2a2"
+        "0x743a09c56b7b3d8dca99ae2ab388d60e031945381d8ec01dab38f74287daa989",
+        "0x0c9b8bc0310e8ebd737a3ac343f8399f3837e8969938b112620cdf3e465db88b",
+        "0xf1cbec941ab8f448dc64a24c2c2806c798cffa9442095d22b12ed1223d45c2d0"
       ]
     },
     {
       "nodeId": "wallet-core",
       "recipient": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
-      "amount": "416666666666666667",
+      "amount": "416666666666667",
       "proof": [
-        "0x43955499900a7814b2f5c54e4d3c076a03deb783db048ed353ce293ac08feb53",
-        "0x013858de3d1196ab2ef8f7157a11811063771bb611f2cd5b16053d3be5257d28",
-        "0x604ec6a10e91f10b0beb19734aa04b40d6ef85e60b8f76c923b5217e0a51b2a2"
+        "0x11d071c02921a59dff9bb66f85989bece956bb0eec9b1e4f4ce7514d7a2455e3",
+        "0xc7b0649481b5157296df77e7c3cff1db1bf994d28632228992508b1492697bb5",
+        "0x57c8f6d5b1e10a731e5e31d5eb6d44b51dfe08ead2da453ed51d2da928b30b17"
       ]
     }
   ]

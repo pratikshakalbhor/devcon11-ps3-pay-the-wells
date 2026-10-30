@@ -4,5 +4,9 @@
   "juror": "0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0",
   "operator": "0x22b94a9953dB57760eF54f010bA304a79bFAbeD2",
   "status": "deployed",
-  "totalPotWei": 10000000000000000
+  "totalPotWei": 10000000000000000,
+  "potEth": "0.01",
+  "proposedMerkleRoot": "0xb13209fed9a8fdd42612dc6cd4fdddc8fda9c677152938a73d18c25af71b916e",
+  "resolveDisputeTx": "0x8cb15b705c3da7210008bee083568b445e38871f1d8f722e3dd2c4af72bceda2",
+  "proposeResultTx": "0xddb460b7e1a54e75592c2fff453930bc37ebf9d7d4a8d3380ff50231f3cf298a"
 }
