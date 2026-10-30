@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "event-app",
+      "name": "Devcon Event App",
+      "recipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    },
+    {
+      "id": "qr-tickets",
+      "name": "QR Ticketing Library",
+      "recipient": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    },
+    {
+      "id": "hindi-i18n",
+      "name": "Hindi i18n Package",
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "id": "wallet-wrapper",
+      "name": "Wallet Connection Wrapper",
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    },
+    {
+      "id": "qr-core",
+      "name": "QR Core (dependency of qr-tickets)",
+      "recipient": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+    },
+    {
+      "id": "i18n-base",
+      "name": "i18n Base (dependency of hindi-i18n)",
+      "recipient": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+    },
+    {
+      "id": "wallet-core",
+      "name": "Wallet Core (dependency of wallet-wrapper)",
+      "recipient": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+    }
+  ],
+  "edges": [
+    { "from": "event-app", "to": "qr-tickets" },
+    { "from": "event-app", "to": "hindi-i18n" },
+    { "from": "event-app", "to": "wallet-wrapper" },
+    { "from": "qr-tickets", "to": "qr-core" },
+    { "from": "hindi-i18n", "to": "i18n-base" },
+    { "from": "wallet-wrapper", "to": "wallet-core" },
+    { "from": "qr-core", "to": "i18n-base" },
+    { "from": "i18n-base", "to": "qr-core" }
+  ]
+}

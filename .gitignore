@@ -1,0 +1,24 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# javascript
+node_modules/
+dist-ui/
+
+# foundry
+cache/
+out/
+broadcast/
+lib/*/out/
+lib/*/cache/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# keep deployment metadata (address only, no secrets)
+!deployments/
+!deployments/**

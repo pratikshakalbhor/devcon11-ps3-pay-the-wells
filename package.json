@@ -1,0 +1,40 @@
+{
+  "name": "devcon11-ps3-pay-the-wells",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Road to Devcon XI Problem 3: jury-weighted dependency graph retro-funding with Merkle claims and a dispute window.",
+  "scripts": {
+    "compute": "tsx scripts/compute-weights.ts",
+    "merkle": "tsx scripts/build-merkle.ts",
+    "verify-merkle": "tsx scripts/verify-merkle.ts",
+    "sign-judgment": "tsx scripts/sign-judgment.ts",
+    "make-judgments": "tsx scripts/make-sample-judgments.ts",
+    "pipeline": "npm run compute && npm run merkle -- 10 && npm run verify-merkle",
+    "source-scan": "node scripts/source-scan.mjs",
+    "test:data": "node --import tsx --test scripts/data.test.ts",
+    "typecheck": "tsc -p tsconfig.scripts.json --noEmit && tsc -p tsconfig.ui.json --noEmit",
+    "test": "npm run typecheck && npm run test:data && npm run source-scan && npm run verify-merkle",
+    "build": "npm run typecheck && vite build --config ui/vite.config.ts",
+    "ui:dev": "vite --config ui/vite.config.ts"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "@openzeppelin/merkle-tree": "^1.0.8",
+    "@tanstack/react-query": "^5.90.0",
+    "dotenv": "^17.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "viem": "^2.38.0",
+    "wagmi": "^2.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vite": "^6.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "jurorId": "0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0",
+    "packageA": "qr-tickets",
+    "packageB": "hindi-i18n",
+    "preferred": "A",
+    "signature": "0x651555be2edeb9e021b7182823dac649d0d59e70594a20a9d065a0c75a58ff9324d51387612ee81d351e92eab209911d081cc709b3dbbb6a26b507705e08b97e1b"
+  },
+  {
+    "jurorId": "0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0",
+    "packageA": "hindi-i18n",
+    "packageB": "wallet-wrapper",
+    "preferred": "A",
+    "signature": "0x46db22ca44a64fbac63eb809189926fbe8f919970b45c9bbcf56d3bec61f37cc5226cfa08b67f14acfc4e8b5126444783ab635c9c56802c495eee9d962a2fb3a1c"
+  },
+  {
+    "jurorId": "0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0",
+    "packageA": "qr-tickets",
+    "packageB": "wallet-wrapper",
+    "preferred": "equal",
+    "signature": "0x748621c1414209a957baa6d7a9b06a62c850312120c3d85d4fc35fb0ae7ab70453fb33a56318840571cd77e735fb92efc71d538660e5e3c34d49f6d81a245e1a1b"
+  }
+]

@@ -1,0 +1,209 @@
+{
+  "totalPot": "10000000000000000000",
+  "keepBps": "5000",
+  "roots": [
+    "event-app"
+  ],
+  "entries": [
+    {
+      "nodeId": "event-app",
+      "parentId": null,
+      "parentAllocationWei": null,
+      "receivedWei": "10000000000000000000",
+      "keptWei": "5000000000000000000",
+      "passedWei": "5000000000000000000",
+      "allocationWei": "5000000000000000000",
+      "keepBps": "5000",
+      "contributions": [
+        {
+          "parentId": null,
+          "amountWei": "10000000000000000000"
+        }
+      ],
+      "siblings": [],
+      "formula": "root receives 10 ETH; keeps 5 ETH and passes 5 ETH to dependencies by weight [no siblings]"
+    },
+    {
+      "nodeId": "qr-tickets",
+      "parentId": "event-app",
+      "parentAllocationWei": "5000000000000000000",
+      "receivedWei": "2500000000000000000",
+      "keptWei": "1250000000000000000",
+      "passedWei": "1250000000000000000",
+      "allocationWei": "1250000000000000000",
+      "keepBps": "5000",
+      "contributions": [
+        {
+          "parentId": "event-app",
+          "amountWei": "2500000000000000000"
+        }
+      ],
+      "siblings": [
+        {
+          "nodeId": "qr-tickets",
+          "winsWad": "1500000000000000000",
+          "weightWad": "500000000000000000"
+        },
+        {
+          "nodeId": "hindi-i18n",
+          "winsWad": "1000000000000000000",
+          "weightWad": "333333333333333333"
+        },
+        {
+          "nodeId": "wallet-wrapper",
+          "winsWad": "500000000000000000",
+          "weightWad": "166666666666666667"
+        }
+      ],
+      "formula": "receives 2.5 ETH from event-app; keepFraction=0.5000; keeps 1.25 ETH; passes 1.25 ETH; sibling weights [qr-tickets=0.5000, hindi-i18n=0.3333, wallet-wrapper=0.1666]"
+    },
+    {
+      "nodeId": "hindi-i18n",
+      "parentId": "event-app",
+      "parentAllocationWei": "5000000000000000000",
+      "receivedWei": "1666666666666666665",
+      "keptWei": "833333333333333333",
+      "passedWei": "833333333333333332",
+      "allocationWei": "833333333333333333",
+      "keepBps": "5000",
+      "contributions": [
+        {
+          "parentId": "event-app",
+          "amountWei": "1666666666666666665"
+        }
+      ],
+      "siblings": [
+        {
+          "nodeId": "qr-tickets",
+          "winsWad": "1500000000000000000",
+          "weightWad": "500000000000000000"
+        },
+        {
+          "nodeId": "hindi-i18n",
+          "winsWad": "1000000000000000000",
+          "weightWad": "333333333333333333"
+        },
+        {
+          "nodeId": "wallet-wrapper",
+          "winsWad": "500000000000000000",
+          "weightWad": "166666666666666667"
+        }
+      ],
+      "formula": "receives 1.666666666666666665 ETH from event-app; keepFraction=0.5000; keeps 0.833333333333333333 ETH; passes 0.833333333333333332 ETH; sibling weights [qr-tickets=0.5000, hindi-i18n=0.3333, wallet-wrapper=0.1666]"
+    },
+    {
+      "nodeId": "wallet-wrapper",
+      "parentId": "event-app",
+      "parentAllocationWei": "5000000000000000000",
+      "receivedWei": "833333333333333335",
+      "keptWei": "416666666666666668",
+      "passedWei": "416666666666666667",
+      "allocationWei": "416666666666666668",
+      "keepBps": "5000",
+      "contributions": [
+        {
+          "parentId": "event-app",
+          "amountWei": "833333333333333335"
+        }
+      ],
+      "siblings": [
+        {
+          "nodeId": "qr-tickets",
+          "winsWad": "1500000000000000000",
+          "weightWad": "500000000000000000"
+        },
+        {
+          "nodeId": "hindi-i18n",
+          "winsWad": "1000000000000000000",
+          "weightWad": "333333333333333333"
+        },
+        {
+          "nodeId": "wallet-wrapper",
+          "winsWad": "500000000000000000",
+          "weightWad": "166666666666666667"
+        }
+      ],
+      "formula": "receives 0.833333333333333335 ETH from event-app; keepFraction=0.5000; keeps 0.416666666666666668 ETH; passes 0.416666666666666667 ETH; sibling weights [qr-tickets=0.5000, hindi-i18n=0.3333, wallet-wrapper=0.1666]"
+    },
+    {
+      "nodeId": "qr-core",
+      "parentId": "qr-tickets",
+      "parentAllocationWei": "1250000000000000000",
+      "receivedWei": "1562500000000000000",
+      "keptWei": "937500000000000000",
+      "passedWei": "625000000000000000",
+      "allocationWei": "937500000000000000",
+      "keepBps": "5000",
+      "contributions": [
+        {
+          "parentId": "qr-tickets",
+          "amountWei": "1250000000000000000"
+        },
+        {
+          "parentId": "i18n-base",
+          "amountWei": "312500000000000000"
+        }
+      ],
+      "siblings": [
+        {
+          "nodeId": "qr-core",
+          "winsWad": "0",
+          "weightWad": "1000000000000000000"
+        }
+      ],
+      "formula": "receives 1.5625 ETH from qr-tickets; keepFraction=0.5000; keeps 0.9375 ETH; passes 0.625 ETH; sibling weights [qr-core=1.0000]"
+    },
+    {
+      "nodeId": "i18n-base",
+      "parentId": "qr-core",
+      "parentAllocationWei": "937500000000000000",
+      "receivedWei": "1458333333333333332",
+      "keptWei": "1145833333333333332",
+      "passedWei": "312500000000000000",
+      "allocationWei": "1145833333333333332",
+      "keepBps": "5000",
+      "contributions": [
+        {
+          "parentId": "qr-core",
+          "amountWei": "625000000000000000"
+        },
+        {
+          "parentId": "hindi-i18n",
+          "amountWei": "833333333333333332"
+        }
+      ],
+      "siblings": [
+        {
+          "nodeId": "i18n-base",
+          "winsWad": "0",
+          "weightWad": "1000000000000000000"
+        }
+      ],
+      "formula": "receives 1.458333333333333332 ETH from qr-core; keepFraction=0.5000; keeps 1.145833333333333332 ETH; passes 0.3125 ETH; sibling weights [i18n-base=1.0000]"
+    },
+    {
+      "nodeId": "wallet-core",
+      "parentId": "wallet-wrapper",
+      "parentAllocationWei": "416666666666666668",
+      "receivedWei": "416666666666666667",
+      "keptWei": "416666666666666667",
+      "passedWei": "0",
+      "allocationWei": "416666666666666667",
+      "keepBps": "5000",
+      "contributions": [
+        {
+          "parentId": "wallet-wrapper",
+          "amountWei": "416666666666666667"
+        }
+      ],
+      "siblings": [
+        {
+          "nodeId": "wallet-core",
+          "winsWad": "0",
+          "weightWad": "1000000000000000000"
+        }
+      ],
+      "formula": "receives 0.416666666666666667 ETH from wallet-wrapper; keepFraction=0.5000; keeps 0.416666666666666667 ETH; passes 0 ETH; sibling weights [wallet-core=1.0000]"
+    }
+  ]
+}

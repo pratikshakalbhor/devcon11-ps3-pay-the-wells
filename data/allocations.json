@@ -1,0 +1,43 @@
+{
+  "totalPot": "10000000000000000000",
+  "assertedSum": "10000000000000000000",
+  "potMatches": true,
+  "keepBps": "5000",
+  "allocations": [
+    {
+      "nodeId": "event-app",
+      "recipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "allocationWei": "5000000000000000000"
+    },
+    {
+      "nodeId": "qr-tickets",
+      "recipient": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "allocationWei": "1250000000000000000"
+    },
+    {
+      "nodeId": "hindi-i18n",
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "allocationWei": "833333333333333333"
+    },
+    {
+      "nodeId": "wallet-wrapper",
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "allocationWei": "416666666666666668"
+    },
+    {
+      "nodeId": "qr-core",
+      "recipient": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "allocationWei": "937500000000000000"
+    },
+    {
+      "nodeId": "i18n-base",
+      "recipient": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "allocationWei": "1145833333333333332"
+    },
+    {
+      "nodeId": "wallet-core",
+      "recipient": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "allocationWei": "416666666666666667"
+    }
+  ]
+}
