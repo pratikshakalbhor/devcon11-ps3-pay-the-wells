@@ -1,20 +1,84 @@
 # devcon11-ps3-pay-the-wells
 
-**Road to Devcon XI — Problem 3: retro-funding with a jury-weighted dependency graph.**
+Jury-weighted retro-funding for a dependency graph, settled onchain with a Merkle root, a 48-hour
+dispute window, and pull-based ETH claims.
 
-A dependency graph is funded from one pot. Jury EIP-712 judgments determine how each parent
-splits its downstream share among competing dependencies. The resulting allocation is committed
-as a Merkle root onchain, opened to a 48-hour juror dispute window, finalized, and claimed leaf by
-leaf. Graph traversal is cycle-safe.
+> Road to Devcon XI — Problem 3. Offchain allocation is computed in BigInt, committed onchain, and
+> claimed leaf by leaf. Contract and tooling are unaudited; do not use with real funds.
+
+---
+
+## Live deployment (Sepolia)
 
 | Item | Value |
 | --- | --- |
-| Sample pot | `10 ETH` (`10000000000000000000` wei) |
-| Sample Merkle root | `0xe0a4e24507e6da90b6f5c165c46af2ae4a1a12c3cb4ad4804debfbb86bd6c477` |
-| Merkle leaves | `7` |
-| Test juror (public address) | `0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0` |
-| Sepolia contract | [`0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22`](https://sepolia.etherscan.io/address/0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22) |
-| Local verification | `forge test` 14/14 pass, `npm test` 4/4 data tests pass, `npm run build` clean |
+| Contract | [`0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22`](https://sepolia.etherscan.io/address/0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22) |
+| Deploy tx | [`0x1d55a2cd8b4ad599fb8ec0760739671dde86a9bfbc92504171e944c061114542`](https://sepolia.etherscan.io/tx/0x1d55a2cd8b4ad599fb8ec0760739671dde86a9bfbc92504171e944c061114542) |
+| `proposeResult` tx | [`0x4076712e3115f78836dec89c86c455731c5717279de76539b94e78fe3aa602c4`](https://sepolia.etherscan.io/tx/0x4076712e3115f78836dec89c86c455731c5717279de76539b94e78fe3aa602c4) |
+| Chain ID | `11155111` |
+| Operator | `0x22b94a9953dB57760eF54f010bA304a79bFAbeD2` |
+| Juror | `0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0` |
+| Pot | `0.01 ETH` (`10000000000000000` wei, held by the contract) |
+| Merkle root | `0xe0a4e24507e6da90b6f5c165c46af2ae4a1a12c3cb4ad4804debfbb86bd6c477` |
+| Runtime code | 3,063 bytes, starts `0x608060405234801561` |
+| State | Root proposed, `finalized() == false`, dispute window open |
+
+`deployments/sepolia.json` is the machine-readable record; the full broadcast is in
+`broadcast/Deploy.s.sol/11155111/run-latest.json` (gitignored).
+
+---
+
+## Stack
+
+| Layer | Tooling |
+| --- | --- |
+| Contract | Solidity `0.8.24`, Foundry 1.8+, OpenZeppelin 5.4 (`ReentrancyGuard`, `MerkleProof`) |
+| Offchain pipeline | TypeScript, `tsx`, `@openzeppelin/merkle-tree`, `viem` |
+| Frontend | Vite 6, React 18, wagmi v2, viem v2, TanStack Query |
+| Data | JSON artifacts committed under `data/` |
+
+---
+
+## Quickstart
+
+```powershell
+git clone https://github.com/pratikshakalbhor/devcon11-ps3-pay-the-wells.git
+cd devcon11-ps3-pay-the-wells
+npm install
+forge install foundry-rs/forge-std --no-commit   # already vendored as a submodule
+```
+
+Recompute the committed artifacts and run every check:
+
+```powershell
+npm run pipeline        # compute -> merkle -> verify-merkle
+forge test             # 13 unit/fuzz + 1 invariant
+npm test                # typecheck + data tests + source scan + proof verification
+npm run build           # production UI -> dist-ui/
+```
+
+Expected pipeline tail:
+
+```text
+All 7 proofs valid.
+Root: 0xe0a4e24507e6da90b6f5c165c46af2ae4a1a12c3cb4ad4804debfbb86bd6c477
+Leaf sum: 10000000000000000000 wei
+```
+
+### npm scripts
+
+| Script | What it does |
+| --- | --- |
+| `npm run compute -- --pot 10` | Verify EIP-712 judgments, compute Bradley-Terry weights, run cycle-safe DFS, split the pot, write `data/allocations.json` + `data/trace.json` |
+| `npm run merkle -- 10` | Build `StandardMerkleTree` over `[recipient, amount]` leaves, assert exact sum, write `data/merkle.json` |
+| `npm run verify-merkle` | Re-verify every proof in `data/merkle.json` |
+| `npm run pipeline` | `compute` -> `merkle -- 10` -> `verify-merkle` |
+| `npm test` | `typecheck` + `test:data` + `source-scan` + `verify-merkle` |
+| `npm run source-scan` | Fails on `Number(`, `parseFloat(`, or `1e18` in `scripts/` and `ui/src/` |
+| `npm run sign-judgment -- --a X --b Y --prefer A` | Test-only EIP-712 signer (uses `TEST_JUROR_PRIVATE_KEY`) |
+| `npm run make-judgments` | Regenerates `data/judgments.json` from the sample graph |
+| `npm run ui:dev` | Vite dev server for the UI |
+| `npm run build` | Typecheck + production UI build into `dist-ui/` |
 
 ---
 
@@ -25,10 +89,10 @@ data/graph.json ─────┐
                      ├─► scripts/compute-weights.ts
 data/judgments.json ─┘      │  verify EIP-712 signatures
                             │  Bradley-Terry sibling weights
-                            │  DFS (visited set + depth cap 100)
+                            │  DFS with visited set + depth cap 100
                             │  BigInt pot split, exact sum assertion
                             ▼
-                 data/allocations.json  +  data/trace.json
+                 data/allocations.json + data/trace.json
                             │
                             ▼
                  scripts/build-merkle.ts
@@ -37,7 +101,7 @@ data/judgments.json ─┘      │  verify EIP-712 signatures
                             ▼
                     data/merkle.json
                             │
-             proposeResult(root) on Sepolia
+              proposeResult(root) on Sepolia
                             │
                  48h DISPUTE_WINDOW
                     │               │
@@ -52,64 +116,101 @@ data/judgments.json ─┘      │  verify EIP-712 signatures
 
 ### Onchain lifecycle
 
-1. `constructor(initialJurors) payable` sets `operator = msg.sender`, `totalPot = msg.value`, and
-   registers jurors.
-2. `proposeResult(root)` is operator-only and accepts exactly one live proposal.
-3. Registered jurors may call `dispute(reason)` until `proposedAt + 48 hours`.
-4. The operator calls `resolveDispute(true)` to reject the root (resetting `merkleRoot` and
-   `proposedAt`, which allows a new proposal) or `resolveDispute(false)` to keep it.
-5. `finalize()` succeeds only after the window and only when `hasOpenDispute == false`.
-6. Recipients call `claim(amount, proof)`; the proof is checked against the immutable root, the
-   `claimed` marker is written **before** the ETH transfer, and `ReentrancyGuard` wraps the call.
+1. `constructor(initialJurors) payable` — `operator = msg.sender`, `totalPot = msg.value`,
+   registers each juror, emits `JurorAdded`.
+2. `proposeResult(root)` — operator-only, one live proposal at a time.
+3. `dispute(reason)` — registered jurors only, until `proposedAt + 48 hours`; sets
+   `hasOpenDispute` and records `keccak256(abi.encode(msg.sender, reason, block.timestamp))`.
+4. `resolveDispute(accepted)` — operator-only. `accepted == true` clears `merkleRoot` and
+   `proposedAt` so a new root can be proposed; `false` keeps the root and closes the dispute.
+5. `finalize()` — only after the window and only when `hasOpenDispute == false`.
+6. `claim(amount, proof)` — proof checked against the immutable root; `claimed[msg.sender]` is
+   written **before** the ETH transfer; `nonReentrant` guards the call.
 7. After `finalize()`, `proposeResult` and `addJuror` revert. The root cannot be overwritten.
 
-### The cycle in the sample graph
+---
 
-`data/graph.json` contains the deliberate cycle:
+## Contract API
+
+`src/DeepFunding.sol` — `contract DeepFunding is ReentrancyGuard`.
+
+### State
+
+| Member | Type | Notes |
+| --- | --- | --- |
+| `operator` | `address public immutable` | Deployer; proposes roots, adds jurors, resolves disputes |
+| `merkleRoot` | `bytes32 public` | Live commitment, zero when none/after accepted dispute |
+| `totalPot` | `uint256 public` | Wei funded at construction |
+| `proposedAt` | `uint256 public` | Timestamp of the current proposal |
+| `DISPUTE_WINDOW` | `uint256 public constant` | `48 hours` |
+| `finalized` | `bool public` | Terminal flag |
+| `hasOpenDispute` | `bool public` | Blocks finalization while true |
+| `jurors` / `claimed` / `disputed` | `mapping` | Registration, claim marker, dispute hashes |
+
+### Functions
+
+| Function | Access | Guards |
+| --- | --- | --- |
+| `constructor(address[] initialJurors) payable` | anyone | `ZeroAddress` per juror |
+| `addJuror(address juror)` | operator | `AlreadyFinalized`, `ZeroAddress` |
+| `proposeResult(bytes32 root)` | operator | `AlreadyFinalized`, `AlreadyProposed`, `InvalidRoot` |
+| `dispute(string reason)` | juror | `NothingProposed`, `WindowClosed`, `NotJuror` |
+| `resolveDispute(bool accepted)` | operator | `NoOpenDispute` |
+| `finalize()` | anyone | `AlreadyFinalized`, `NothingProposed`, `WindowNotClosed`, `OpenDispute` |
+| `claim(uint256 amount, bytes32[] proof)` | recipient | `NotFinalized`, `AlreadyClaimed`, `InvalidProof`, `TransferFailed`, `nonReentrant` |
+
+### Events
+
+`ResultProposed(bytes32 root, uint256 proposedAt)`, `Disputed(address indexed juror, string reason)`,
+`DisputeResolved(bool accepted)`, `Finalized(bytes32 root)`,
+`Claimed(address indexed recipient, uint256 amount)`, `JurorAdded(address indexed juror)`.
+
+### Leaf encoding (critical)
+
+`@openzeppelin/merkle-tree`'s `StandardMerkleTree` **double-hashes** leaves:
+
+```solidity
+leaf = keccak256(bytes.concat(keccak256(abi.encode(msg.sender, amount))));
+```
+
+The contract uses the same construction. Single-hashing makes every claim fail with
+`InvalidProof`.
+
+---
+
+## Data pipeline
+
+### Inputs
+
+- `data/graph.json` — packages with `id`, `keepBps`, and `dependencies`.
+- `data/judgments.json` — EIP-712 signed pairwise comparisons.
+
+The sample graph contains a deliberate cycle:
 
 ```text
 qr-core ──► i18n-base
 i18n-base ──► qr-core
 ```
 
-`scripts/compute-weights.ts` performs DFS with a global `visited` set:
-
-- On the first visit, the node receives its share, keeps `keepBps / 10000`, and passes the rest to
-  its children.
-- If a node is reached again (the cycle back-edge), the incoming share is still accounted for, but
-  the traversal **does not re-enter** that node. This terminates the cycle without losing wei.
-- A separate depth guard throws if `depth > 100`, so even a malformed graph cannot recurse forever.
-- Every split assigns the rounding remainder to the last child, and the final assertion is exact:
-  `sum(allocations) === totalPot`. No floats are used anywhere.
-
-The frontend marks both directions of the cycle in dashed red; the DFS back-edge is the one the
-visited set stops.
+`compute-weights.ts` performs DFS with a global `visited` set: a re-entered node still receives its
+incoming share but is not traversed again, so the cycle terminates without losing wei. A separate
+`depth > 100` guard throws on malformed graphs. Each split gives the rounding remainder to the last
+child, and the final assertion is exact: `sum(allocations) === totalPot`. No floats.
 
 ### EIP-712 judgments
 
-Domain: `{ name: "DeepFunding", version: "1", chainId: 11155111 }`.
-Struct:
-
 ```text
-Judgment(string packageA, string packageB, string preferred)
+Domain: { name: "DeepFunding", version: "1", chainId: 11155111 }
+Struct: Judgment(string packageA, string packageB, string preferred)
 ```
 
-`preferred` is `"A"`, `"B"`, or `"equal"`. `scripts/compute-weights.ts` recovers each signature and
-throws if it does not match `jurorId`. The sample judgments compare the three first-level
-dependencies:
+`preferred` is `"A"`, `"B"`, or `"equal"`. Signatures are recovered and checked against the
+`jurorId` in `data/judgments.json`; a mismatch throws. Win counts feed Bradley-Terry sibling
+weights (`1` win, `0.5` tie), which are normalized per sibling set.
 
-| Pair | Preferred |
-| --- | --- |
-| `qr-tickets` vs `hindi-i18n` | `A` (qr-tickets) |
-| `hindi-i18n` vs `wallet-wrapper` | `A` (hindi-i18n) |
-| `qr-tickets` vs `wallet-wrapper` | `equal` |
+### Sample allocation (10 ETH pot)
 
-Win counts: `qr-tickets = 1.5`, `hindi-i18n = 1.0`, `wallet-wrapper = 0.5`. Normalized weights:
-`0.5 / 0.3333… / 0.1666…`.
-
-### Allocation result (sample, 10 ETH)
-
-| Node | Allocation (ETH) | Share of pot |
+| Node | ETH | Share |
 | --- | ---: | ---: |
 | `event-app` | 5 | 50.0000% |
 | `qr-tickets` | 1.25 | 12.5000% |
@@ -120,229 +221,263 @@ Win counts: `qr-tickets = 1.5`, `hindi-i18n = 1.0`, `wallet-wrapper = 0.5`. Norm
 | `wallet-core` | 0.416666666666666667 | 4.1667% |
 | **Sum** | **10** | **100%** |
 
-### Merkle leaf encoding (important)
-
-`@openzeppelin/merkle-tree`'s `StandardMerkleTree` **double-hashes** leaves:
-`keccak256(bytes.concat(keccak256(abi.encode(recipient, amount))))`. The Solidity contract uses the
-same double hash so the JS proofs verify onchain. Single-hashing would make every claim fail.
-
 ---
 
 ## Repository layout
 
 ```text
+src/DeepFunding.sol            pot + dispute window + Merkle claims + CEI + ReentrancyGuard
+test/
+  DeepFunding.t.sol            unit, fuzz, reentrancy, CEI-ordering tests
+  DeepFundingInvariant.t.sol   invariant: contract balance >= unclaimed allocations
+script/Deploy.s.sol            Sepolia deploy: 0.01 ETH pot, jurors [JUROR_ADDRESS, deployer]
 data/
-  graph.json          sample dependency graph with cycle
-  judgments.json      3 EIP-712 signed comparisons
-  allocations.json    BigInt allocations + exact sum assertion
-  trace.json          per-node parent, weights, formula (UI explanation)
-  merkle.json         root, 7 leaves, proofs
+  graph.json                   sample dependency graph with cycle
+  judgments.json               3 EIP-712 signed comparisons
+  allocations.json            BigInt allocations + exact sum assertion
+  trace.json                  per-node parent, weights, formula (UI explanation)
+  merkle.json                 root, 7 leaves, proofs
 scripts/
-  types.ts            shared strict types
-  compute-weights.ts  signature verification, weights, cycle-safe DFS, pot split
-  build-merkle.ts     StandardMerkleTree + exact sum assertion
-  verify-merkle.ts    verifies all proofs
-  sign-judgment.ts    test-only EIP-712 signer (key from env)
-  make-sample-judgments.ts  regenerates data/judgments.json (key from env)
-  data.test.ts        node:test cycle/sum/proof/signature checks
-  source-scan.mjs     rejects Number(), parseFloat(), 1e18
-src/DeepFunding.sol   dispute window + Merkle claims + CEI + ReentrancyGuard
-test/                 Foundry unit, fuzz, reentrancy, invariant tests
-script/Deploy.s.sol   Sepolia deploy script (0.01 ETH pot)
-ui/                   Vite + React 18 + TypeScript + wagmi v2 + viem
+  types.ts                    shared strict types
+  eip712.ts                   domain + typehash definitions
+  compute-weights.ts          signature verification, weights, cycle-safe DFS, pot split
+  build-merkle.ts             StandardMerkleTree + exact sum assertion
+  verify-merkle.ts            verifies all proofs
+  sign-judgment.ts            test-only signer (key from env)
+  make-sample-judgments.ts    regenerates judgments (key from env)
+  data.test.ts                node:test cycle/sum/proof/signature checks
+  source-scan.mjs             rejects Number(), parseFloat(), 1e18
+ui/
+  src/abi.ts                  contract ABI used by wagmi
+  src/components/             DependencyGraph, WhyPanel, DisputePanel, ClaimPanel
+deployments/sepolia.json      public deployment record (no secrets)
+foundry.toml                  solc 0.8.24, cancun, fs_permissions read-write "./"
 ```
 
 ---
 
-## Reproduce
-
-Prerequisites: Node 22+, Foundry 1.8+, npm.
+## Tests
 
 ```powershell
-npm install
-forge install foundry-rs/forge-std --no-commit   # already committed as a submodule
-
-# Recompute from the committed graph and judgments.
-# The committed judgments verify without any private key.
-npm run compute -- --pot 10
-npm run merkle -- 10
-npm run verify-merkle
-
-# Checks
 forge test -vv
-npm test          # typecheck + data tests + source scan + Merkle proofs
-npm run build     # production UI build -> dist-ui/
-node scripts/source-scan.mjs
+npm test
 ```
 
-Expected Merkle output:
+`test/DeepFunding.t.sol` covers:
 
-```text
-All 7 proofs valid.
-Root: 0xe0a4e24507e6da90b6f5c165c46af2ae4a1a12c3cb4ad4804debfbb86bd6c477
-Leaf sum: 10000000000000000000 wei
-```
+| Test | Property |
+| --- | --- |
+| `test_ProposeResult_OnlyOperator` | proposal is operator-gated |
+| `test_Claim_HappyPath` | valid proof pays exactly once |
+| `test_Claim_InvalidProofReverts` | bad proof reverts |
+| `test_Claim_OnlyOnce` | double claim reverts |
+| `test_FinalizeBeforeWindowReverts` | window is enforced |
+| `test_OpenDisputeBlocksFinalize` | open dispute blocks finalization |
+| `test_DisputeAfterWindowReverts` | late dispute reverts |
+| `test_NonJurorDisputeReverts` | only registered jurors |
+| `test_ResolveDisputeAccepted_AllowsReproposal` | accepted dispute resets the root |
+| `test_FinalizedRootIsImmutable` | root and juror set frozen after finalize |
+| `test_ReentrancyOnClaim` | reentrant recipient cannot drain |
+| `test_ClaimedMarkerSetBeforeTransfer` | CEI ordering |
+| `testFuzz_InvalidProofAlwaysReverts` | 256 runs |
 
-### Regenerating the sample judgments (test only)
-
-`scripts/sign-judgment.ts` and `scripts/make-sample-judgments.ts` are test tooling. They read
-`TEST_JUROR_PRIVATE_KEY` from `.env` and never hardcode or commit it. Do **not** use a real funded
-key. The committed `.env` is gitignored; only signatures and the public juror address are tracked.
-
-```powershell
-# .env contains only: TEST_JUROR_PRIVATE_KEY=0x...
-npm run make-judgments
-npm run compute -- --pot 10
-npm run merkle -- 10
-npm run verify-merkle
-```
-
-Single judgment:
-
-```powershell
-npm run sign-judgment -- --a qr-tickets --b hindi-i18n --prefer A
-```
-
-### Frontend
-
-```powershell
-Copy-Item ui/.env.example ui/.env.local
-# set VITE_CONTRACT_ADDRESS=0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22 (Sepolia)
-npm run ui:dev
-npm run build
-```
-
-The main graph and "Why did I get this much?" panel need no wallet. Dispute and claim panels use
-injected wallets and enforce Sepolia (`11155111`). Claim success is shown only when
-`receipt.status === "success"`. Amounts use `formatEther` and BigInt percentage math only.
+`test/DeepFundingInvariant.t.sol` asserts `totalClaimed <= totalPot` and
+`contractBalance + totalClaimed == totalPot` across randomized claims.
 
 ---
 
-## Sepolia deployment
+## Deploying
 
-**Status: DEPLOYED. Bytecode verified onchain, Merkle root proposed.**
+### Environment
 
-| Item | Value |
-| --- | --- |
-| Contract | [`0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22`](https://sepolia.etherscan.io/address/0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22) |
-| Etherscan | <https://sepolia.etherscan.io/address/0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22> |
-| Deploy tx | [`0x1d55a2cd8b4ad599fb8ec0760739671dde86a9bfbc92504171e944c061114542`](https://sepolia.etherscan.io/tx/0x1d55a2cd8b4ad599fb8ec0760739671dde86a9bfbc92504171e944c061114542) |
-| `proposeResult` tx | [`0x4076712e3115f78836dec89c86c455731c5717279de76539b94e78fe3aa602c4`](https://sepolia.etherscan.io/tx/0x4076712e3115f78836dec89c86c455731c5717279de76539b94e78fe3aa602c4) |
-| Chain ID | `11155111` |
-| Operator | `0x22b94a9953dB57760eF54f010bA304a79bFAbeD2` |
-| Juror | `0x55825c4A63627E344d5cE8FB5f0C6f8daAc653e0` |
-| Pot | `0.01 ETH` (`10000000000000000` wei, held by the contract) |
-| Merkle root | `0xe0a4e24507e6da90b6f5c165c46af2ae4a1a12c3cb4ad4804debfbb86bd6c477` (equals `data/merkle.json`) |
-| Runtime code | 3063 bytes, starts `0x608060405234801561` |
-| Finalized | `false` — the 48-hour dispute window is open |
+`.env` at the repo root (gitignored). `.env.example` documents the keys.
 
-The deploy script's output is recorded in `deployments/sepolia.json`
-(`chainId`, `contract`, `operator`, `juror`, `totalPotWei`, `status`) and the full broadcast in
-`broadcast/Deploy.s.sol/11155111/run-latest.json`.
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `PRIVATE_KEY` | yes | Funded deployer; becomes `operator` |
+| `SEPOLIA_RPC_URL` | yes | Any Sepolia endpoint |
+| `JUROR_ADDRESS` | yes | **20-byte address**, not a key |
+| `TEST_JUROR_PRIVATE_KEY` | test only | Only for regenerating sample judgments |
 
-### Reproduce / verify
+`.env` is untracked; `deployments/sepolia.json` contains public chain data only.
+
+### Deploy
 
 ```powershell
-# 1. Load .env into the PowerShell process.
+# 1. Load .env into the process (never echo PRIVATE_KEY).
 Get-Content .env | ForEach-Object {
-  if ($_ -match '^([^#=]+)=(.*)$') { Set-Item -Path "Env:$($matches[1])" -Value $matches[2] }
+  if ($_ -match '^([^#=]+)=(.*)$') { Set-Item -Path "Env:$($matches[1])" -Value $matches[2].Trim() }
 }
 
-# 2. Prove bytecode exists.
-$contract = (Get-Content deployments/sepolia.json | ConvertFrom-Json).contract
-cast code $contract --rpc-url $env:SEPOLIA_RPC_URL        # starts 0x6080
-
-# 3. Read the committed root.
-cast call $contract "merkleRoot()(bytes32)" --rpc-url $env:SEPOLIA_RPC_URL
-```
-
-### Redeploying
-
-```powershell
+# 2. Rebuild artifacts and the data set.
+forge clean; forge build
 npm run compute -- --pot 10
 npm run merkle -- 10
 
-# Sepolia charges roughly 6x the local revm gas estimate for contract creation, so the default
-# 130% multiplier runs out of gas. 900% gives the creation enough headroom.
+# 3. Broadcast. See "Gas" below for why the multiplier is required.
 forge script script/Deploy.s.sol:Deploy --rpc-url $env:SEPOLIA_RPC_URL `
   --broadcast --gas-estimate-multiplier 900
 
-$root = (Get-Content data/merkle.json | ConvertFrom-Json).root
+# 4. Prove bytecode exists before trusting the JSON record.
 $contract = (Get-Content deployments/sepolia.json | ConvertFrom-Json).contract
+cast code $contract --rpc-url $env:SEPOLIA_RPC_URL      # must start 0x6080, never 0x
+
+# 5. Propose the committed root.
+$root = (Get-Content data/merkle.json | ConvertFrom-Json).root
 cast send $contract "proposeResult(bytes32)" $root `
   --rpc-url $env:SEPOLIA_RPC_URL --private-key $env:PRIVATE_KEY
+
+# 6. Read back.
+cast call $contract "merkleRoot()(bytes32)" --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
-`script/Deploy.s.sol` writes `deployments/sepolia.json` after broadcasting. Note that it writes the
-file even when the broadcast fails, so always confirm with `cast code` before trusting the address.
-`foundry.toml` grants `fs_permissions = [{ access = "read-write", path = "./" }]` so `vm.writeJson`
-can create the file.
+### Gas
+
+Sepolia's execution gas for **contract creation** is far above the local revm estimate used by
+`forge script` (measured ~4x for an empty contract, ~6.7x for `DeepFunding`). A plain transfer still
+costs 21,000, but deploying an empty contract costs ~210,000 and the full `DeepFunding` init code
+costs ~5.4M. The default `--gas-estimate-multiplier 130` therefore OOGs, and `--gas-limit` is only
+an alias for `--block-gas-limit` (simulation), so it does not help. Use `--gas-estimate-multiplier
+900`.
+
+### `vm.writeJson` behavior
+
+`foundry.toml` grants:
+
+```toml
+fs_permissions = [{ access = "read-write", path = "./" }]
+```
+
+`script/Deploy.s.sol` writes `deployments/sepolia.json` **after broadcasting** — but Foundry runs
+the script body even when the broadcast fails, so the file can contain a predicted address that was
+never deployed. Always confirm with `cast code` before committing the record.
 
 ---
 
-## Rubric map
+## Operations runbook
 
-| # | Rubric item | Implementation | Test / evidence |
-| --- | --- | --- | --- |
-| 1 | Claims verified against onchain commitment | `src/DeepFunding.sol` → `claim`, `MerkleProof.verify` | `test_Claim_HappyPath`, `test_Claim_InvalidProofReverts`, fuzz invalid proof |
-| 2 | Finalization reverts before dispute window closes | `finalize` → `WindowNotClosed` | `test_FinalizeBeforeWindowReverts` |
-| 3 | Jury judgments only from registered jurors | `dispute` → `jurors[msg.sender]` / `NotJuror` | `test_NonJurorDisputeReverts` |
-| 4 | Open dispute blocks finalization | `finalize` → `hasOpenDispute` / `OpenDispute` | `test_OpenDisputeBlocksFinalize` |
-| 5 | Graph traversal terminates on cycles | `compute-weights.ts` `visited` set + `depthGuard(100)` | `scripts/data.test.ts` cycle test; compute output on `qr-core ↔ i18n-base` |
-| 6 | Allocation asserts sum == pot exactly | `compute-weights.ts` final assertion; `build-merkle.ts` sum check | `scripts/data.test.ts` allocation sum; `npm run compute` |
-| 7 | Claimed marker before transfer (CEI) | `claim` writes `claimed[msg.sender] = true` before `.call` | `test_ClaimedMarkerSetBeforeTransfer`, `test_ReentrancyOnClaim` |
-| 8 | Commitment immutable after finalization | `proposeResult` → `AlreadyFinalized`; `addJuror` guarded | `test_FinalizedRootIsImmutable` |
-| 9 | Sample graph contains a cycle | `data/graph.json` last two edges | `scripts/data.test.ts` cycle test |
-| 10 | No credentials in tracked files | `.gitignore`, `.env.example`, env-only signer | credential grep below; `git ls-files` shows no `.env` |
+```powershell
+$c = "0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22"
+$rpc = $env:SEPOLIA_RPC_URL
+```
+
+**Propose** (operator):
+
+```powershell
+cast send $c "proposeResult(bytes32)" (Get-Content data/merkle.json | ConvertFrom-Json).root `
+  --rpc-url $rpc --private-key $env:PRIVATE_KEY
+```
+
+**Dispute** (registered juror, within 48h):
+
+```powershell
+cast send $c "dispute(string)" "root does not match published trace" `
+  --rpc-url $rpc --private-key $env:TEST_JUROR_PRIVATE_KEY
+```
+
+**Resolve** (operator): `true` rejects the root and allows a new proposal; `false` keeps it.
+
+```powershell
+cast send $c "resolveDispute(bool)" true --rpc-url $rpc --private-key $env:PRIVATE_KEY
+```
+
+**Finalize** (anyone, after the window, no open dispute):
+
+```powershell
+cast send $c "finalize()" --rpc-url $rpc --private-key $env:PRIVATE_KEY
+```
+
+**Claim** (recipient):
+
+```powershell
+# amount + proof come from data/merkle.json for your address
+cast send $c "claim(uint256,bytes32[])" <amount> "[<proof0>,<proof1>,...]" `
+  --rpc-url $rpc --private-key $env:RECIPIENT_PRIVATE_KEY
+```
+
+**Inspect state**:
+
+```powershell
+cast call $c "merkleRoot()(bytes32)"        --rpc-url $rpc
+cast call $c "proposedAt()(uint256)"        --rpc-url $rpc
+cast call $c "finalized()(bool)"            --rpc-url $rpc
+cast call $c "hasOpenDispute()(bool)"       --rpc-url $rpc
+cast call $c "totalPot()(uint256)"          --rpc-url $rpc
+cast call $c "jurors(address)(bool)" $env:JUROR_ADDRESS --rpc-url $rpc
+```
+
+---
+
+## Frontend
+
+```powershell
+Copy-Item ui/.env.example ui/.env.local
+# VITE_CONTRACT_ADDRESS=0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22
+npm run ui:dev
+npm run build      # -> dist-ui/
+```
+
+The graph and the "Why did I get this much?" panel are read-only and need no wallet. Dispute and
+claim panels use an injected wallet and enforce Sepolia (`11155111`). Claim success is shown only
+when `receipt.status === "success"`. Amounts use `formatEther` and BigInt percentage math.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `cast code` returns `0x` | Address was never deployed (predicted address written by a failed broadcast) | Re-broadcast and verify `0x6080…` |
+| `Transaction Failure` with `gasUsed == gasLimit` | Creation OOG from the low local estimate | `--gas-estimate-multiplier 900` |
+| `WrongChain(1)` / `WrongChain(...)` | RPC is not Sepolia | Point `SEPOLIA_RPC_URL` at chain `11155111` |
+| `vm.envAddress: failed parsing as address` | `JUROR_ADDRESS` holds a key instead of an address | Set the 20-byte juror address |
+| `AlreadyProposed` | A root is already live | `resolveDispute(true)` resets it, or finalize the existing root |
+| `WindowNotClosed` | `finalize()` before `proposedAt + 48h` | Wait out the window |
+| `OpenDispute` | A juror dispute is unresolved | Operator calls `resolveDispute` |
+| `NotJuror` | Disputer is not registered | `addJuror` (operator, pre-finalization) |
+| `InvalidProof` | Leaf built with single hashing or wrong amount | Rebuild from `data/merkle.json` with the double-hashed leaf |
+| `fs_permissions` denial on `vm.writeJson` | Path not granted | `fs_permissions = [{ access = "read-write", path = "./" }]` |
+
+---
+
+## Security model and limits
+
+- **Unaudited.** Testnet-only demonstration.
+- The operator is trusted to propose a correct root and to resolve disputes; the 48-hour window is
+  the social backstop. Juror registration is operator-controlled.
+- `claim` is `nonReentrant`, follows checks-effects-interactions, and reverts the whole claim if the
+  ETH transfer fails. Recipients with reverting fallbacks cannot claim.
+- `resolveDispute(true)` clears the root, so the operator can re-propose; it cannot alter an
+  already-finalized root.
+- The EIP-712 signer in `scripts/` is test-only. Production should use hardware wallets and bind the
+  domain to a deployed verifier.
+- No private keys, mnemonics, RPC credentials, or funded accounts are committed. `npm run
+  source-scan` and the credential grep below enforce this.
 
 ### Credential check
 
 ```powershell
 git ls-files | Select-String -Pattern '(^|/)\.env$'
-git grep -nE 'PRIVATE_KEY=0x[0-9a-fA-F]{64}' -- . ':!.env.example'
+git grep -nEi '(private|secret|mnemonic|passphrase|api.?key).{0,30}0x[0-9a-fA-F]{64}' -- .
+git grep -nEi 'infura\.io/v3/|alchemy\.com/v2/|api[_-]?key=|apikey=' -- .
 ```
 
-Expected: no tracked `.env`, no private-key assignment. The only key material is the untracked
-local `.env` used to generate test judgments. Public test addresses and signatures are safe.
+Expected: only `.env.example` / `ui/.env.example` are tracked, and no assignments or provider keys
+match.
 
 ---
 
-## Verification table
+## Conventions
 
-| Check | Result | Evidence |
-| --- | --- | --- |
-| `forge test -vv` | **Done — 14 passed, 0 failed** | 13 unit/fuzz + 1 invariant, 256 fuzz runs, 64 invariant runs |
-| `npm test` | **Done — 4/4 data tests, typecheck, scan, proofs** | `node:test` TAP output, `All 7 proofs valid.` |
-| `npm run build` | **Done — 0 TS errors** | Vite production build to `dist-ui/` |
-| `node scripts/source-scan.mjs` | **Done — exit 0** | `source-scan: clean` |
-| `node scripts/verify-merkle.ts` | **Done** | `All 7 proofs valid.` |
-| Credential grep | **Done — zero secrets** | `.env` untracked; `.env.example` placeholders only |
-| Sepolia deployment | **Live — `0xc02f9570f0B7DAB6B12B7ba6d453e5e302A4ec22`** | deploy tx `0x1d55a2cd…1542` in `broadcast/Deploy.s.sol/11155111/run-latest.json` |
-| `cast code` proof | **Done — 3063 bytes, starts `0x608060405234801561`** | `cast code 0xc02f…ec22 --rpc-url $env:SEPOLIA_RPC_URL` |
-| `proposeResult` smoke test | **Done — root matches `data/merkle.json`** | tx `0x4076712e…02c4`; `merkleRoot()` readback equal |
-| Push | **Not run (per instructions)** | push command below |
+- **BigInt only** for money. `source-scan.mjs` fails the build on `Number()`, `parseFloat()`, or
+  `1e18` in `scripts/` and `ui/src/`.
+- Allocation math asserts `sum == pot` exactly; the rounding remainder goes to the last child.
+- Leaf encoding must stay in sync between `build-merkle.ts` and `DeepFunding.claim`.
+- Commits: `contract:`, `offchain:`, `ui:`, `deploy:`, `docs:` prefixes.
 
----
-
-## Push commands
-
-The repository is on branch `main` with all deployment commits applied locally. Do not push from
-this environment.
+## Push
 
 ```powershell
 git remote add origin https://github.com/pratikshakalbhor/devcon11-ps3-pay-the-wells.git
 git push -u origin main
 ```
-
----
-
-## Security notes
-
-- The offchain signer is **test-only**. In production, jurors should sign with hardware wallets and
-  the domain should bind to a deployed verifier or contract address.
-- The contract trusts the operator to propose a correct root and to resolve disputes. The dispute
-  window is the social backstop; juror registration is operator-controlled.
-- `claim` is `nonReentrant` and follows checks-effects-interactions: proof check → `claimed = true`
-  → emit → external transfer. A failed transfer reverts the whole claim.
-- The double-hashed leaf encoding is deliberate and must stay in sync with `StandardMerkleTree`.
-- No private keys, RPC URLs, or funded accounts are committed.
