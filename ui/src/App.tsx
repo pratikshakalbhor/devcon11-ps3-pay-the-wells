@@ -4,8 +4,10 @@ import { CONTRACT_ADDRESS, SEPOLIA_CHAIN_ID } from "./abi";
 import { ClaimPanel } from "./components/ClaimPanel";
 import { DependencyGraph } from "./components/DependencyGraph";
 import { DisputePanel } from "./components/DisputePanel";
+import { OnchainStatus } from "./components/OnchainStatus";
 import { WhyPanel } from "./components/WhyPanel";
 import { graph, merkle, totalPot } from "./data";
+import { etherscanAddress } from "./deployment";
 import { formatEth, shortAddress, shortHash } from "./format";
 
 function WalletBar() {
@@ -62,9 +64,8 @@ export default function App() {
           <p className="eyebrow">Road to Devcon XI · Problem 3</p>
           <h1>Pay the Wells</h1>
           <p className="lede">
-            Retro-funding for Kavya's Devcon event app, weighted by jury comparisons across a
-            dependency graph. Claims are Merkle-based, the dispute window is 48 hours, and the
-            traversal is cycle-safe.
+            Retro-funding for Kavya's Devcon event app. Each project in the dependency graph gets
+            rewarded based on how the jury ranked it. Click a node to see exactly how its share was calculated.
           </p>
         </div>
         <WalletBar />
@@ -86,10 +87,18 @@ export default function App() {
         <div>
           <span>Contract</span>
           <strong className="mono">
-            {CONTRACT_ADDRESS === null ? "not deployed" : shortAddress(CONTRACT_ADDRESS)}
+            {CONTRACT_ADDRESS === null ? (
+              "not deployed"
+            ) : (
+              <a href={etherscanAddress(CONTRACT_ADDRESS)} target="_blank" rel="noreferrer">
+                {shortAddress(CONTRACT_ADDRESS)} ↗
+              </a>
+            )}
           </strong>
         </div>
       </section>
+
+      <OnchainStatus />
 
       <main>
         <section className="card graph-card">
@@ -99,9 +108,7 @@ export default function App() {
               <h2>Where the pot flows</h2>
             </div>
             <p className="muted small">
-              Tap a node to see the exact allocation math. Dashed red edges are the
-              <span className="mono"> qr-core ↔ i18n-base </span>
-              cycle; the DFS visited-set stops re-entry.
+              Tap any node to see how its allocation was calculated. Dashed red edges indicate a circular dependency.
             </p>
           </div>
           <DependencyGraph graph={graph} selectedId={selectedId} onSelect={setSelectedId} />
@@ -119,13 +126,7 @@ export default function App() {
 
       <footer>
         <p>
-          Offchain inputs: data/graph.json, data/judgments.json, data/allocations.json,
-          data/merkle.json, data/trace.json. All amount arithmetic is BigInt wei; no floats.
-        </p>
-        <p className="muted small">
-          Sample graph contains the deliberate cycle qr-core → i18n-base → qr-core. The
-          offchain DFS records the first visit and skips re-entry while still allocating the
-          incoming share, so the pot is conserved exactly.
+          Data sources: graph, judgments, allocations, merkle tree, and trace — all computed offchain and bundled with the app.
         </p>
       </footer>
     </div>
